@@ -9,7 +9,6 @@ import requests
 import json
 import os
 import hashlib
-from pymongo import MongoClient
 import hashlib
 from urllib.parse import urlparse, urljoin
 
@@ -36,9 +35,6 @@ login_manager.init_app(app)
 #docker-compose environment variables
 API_ADDR = os.environ['BACKEND_ADDR']
 API_PORT = os.environ['BACKEND_PORT']
-
-client = MongoClient('mongodb://' + os.environ['MONGODB_HOSTNAME'], 27017)
-auth_db = client.auth
 
 ##
 # Forms
@@ -69,6 +65,7 @@ class User(UserMixin):
         self.username = username
         self.token = token 
 
+#Load user using cookies
 @login_manager.user_loader
 def load_user(user_id):
     app.logger.debug("LOAD USER: " + str(session['id']) + " " + session['username'] + session['token'])
@@ -90,6 +87,7 @@ def index():
     app.logger.debug("Main page entry")
     return flask.render_template('index.html')
 
+#Login a user
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -99,14 +97,12 @@ def login():
         h = hashlib.new('sha512_256')
         h.update(request.form["password"].encode('utf-8'))
         h_passwd = h.hexdigest()
-        app.logger.debug("WEB LOGIN HPASS: " + h_passwd)
         r = requests.get("http://"+API_ADDR+":"+API_PORT+"/token?username="+username+"&password="+h_passwd)
+        resp = json.loads(r.text)
         if r.status_code == 200:
-            resp = json.loads(r.text)
             token = resp.get('token')
             user = User(int(resp['id']), username, token)
             if login_user(user, remember=remember):
-                app.logger.debug("AUTH: " + str(current_user.is_authenticated))
                 session['username'] = username
                 session['token'] = token
                 session['id'] = int(resp['id']) 
@@ -120,39 +116,29 @@ def login():
                 flash("Sorry, but you could not log in.")
         else:
             flash("The username or password you entered is wrong")
+            flash(resp['error'])
     return render_template("login.html", form=form)
 
+#Register a user
 @app.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
-    app.logger.debug("CREATE FORM")
     if form.validate_on_submit() and request.method == "POST" and "username" in request.form:
-        app.logger.debug("IN MAIN IF")
         username = request.form["username"]
-        app.logger.debug("GOT USERNAME: " + username)
-        entry = auth_db.users.find_one({'username': username})
-        if entry == None:
-            app.logger.debug("NO CURRENT USER")
-            remember = request.form.get("remember", "false") == "true"
-            h = hashlib.new('sha512_256')
-            h.update(request.form["password"].encode('utf-8'))
-            h_passwd = h.hexdigest()
+        remember = request.form.get("remember", "false") == "true"
+        h = hashlib.new('sha512_256')
+        h.update(request.form["password"].encode('utf-8'))
+        h_passwd = h.hexdigest()
 
-            app.logger.debug("WEB REG HPASS: " + h_passwd)
-            app.logger.debug("GOT PASSWD: "+h_passwd)
-            r = requests.get("http://"+API_ADDR+":"+API_PORT+"/register?username="+username+"&password="+h_passwd)
-            if r.status_code != 200:
-                app.logger.debug("FAILED TO REG: " + r.text)
-                flash("Failed to register")
-            else:
-                app.logger.debug("REGISTERED SUCCESS")
-                flash("Registration successful")
+        r = requests.get("http://"+API_ADDR+":"+API_PORT+"/register?username="+username+"&password="+h_passwd)
+        if r.status_code != 200:
+            flash("Failed to register")
+            result = json.loads(r.text)
+            flash(result['error'])
         else:
-            app.logger.debug("USER EXISTS")
-            flash("The username you entered already exists")
+            flash("Registration successful")
     else:
         flash("Invalid input")
-    app.logger.debug("RE RENDER")
     return render_template("register.html", form=form)
 
 @app.route("/logout")

@@ -1,6 +1,6 @@
 import os
 import flask
-from flask import Flask, request
+from flask import Flask, request, make_response
 from flask_restful import Resource, Api
 from pymongo import MongoClient
 import secrets
@@ -102,11 +102,11 @@ class ListAll(Resource):
         #validate
         token = request.args.get('token', type=str)
         if token == None or _validate_token(token) != SUCCESS:
-            return 'error:' + INVALID_ERR 
+            return make_response('error:' + INVALID_ERR, 401) 
 
         validity = _validate_token(token)
         if validity != SUCCESS:
-            return 'error:' + validity
+            return make_response('error:' + validity, 401)
 
         #Remove all controls other than the 'top_n', if applicable
         top_n = request.args.get('top', type=int)
@@ -115,11 +115,11 @@ class ListAll(Resource):
 
         #Return either json or csv
         if fmt == 'json':
-            return brevets
+            return make_response(flask.jsonify(brevets), 200)
         elif fmt == 'csv':
-            return _db_data_to_csv(brevets)
+            return make_response(_db_data_to_csv(brevets), 200)
         else:
-            return 'INVALID FORMAT DIRECTIVE'
+            return make_response('INVALID FORMAT DIRECTIVE', 401)
 
 #used to remove 'open' or 'closed' from the retrieved database records
 def _rm_from_brevets_controls(brevets, key):
@@ -136,11 +136,11 @@ class ListOpenOnly(Resource):
         #validate
         token = request.args.get('token', type=str)
         if token == None or _validate_token(token) != SUCCESS:
-            return 'error:' + INVALID_ERR 
+            return make_response('error:' + INVALID_ERR, 401) 
 
         validity = _validate_token(token)
         if validity != SUCCESS:
-            return 'error:' + validity
+            return make_response('error:' + validity, 401)
 
         #process
         top_n = request.args.get('top', type=int)
@@ -149,11 +149,11 @@ class ListOpenOnly(Resource):
 
         brevets = _rm_from_brevets_controls(brevets, 'close')
         if fmt == 'json':
-            return brevets
+            return make_response(flask.jsonify(brevets), 200)
         elif fmt == 'csv':
-            return _db_data_to_csv(brevets)
+            return make_response(_db_data_to_csv(brevets), 200)
         else:
-            return 'INVALID FORMAT DIRECTIVE'
+            return make_response('INVALID FORMAT DIRECTIVE', 401)
 
 #Resource for handling listCloseOnly requests
 class ListCloseOnly(Resource):
@@ -163,11 +163,11 @@ class ListCloseOnly(Resource):
         #validate
         token = request.args.get('token', type=str)
         if token == None or _validate_token(token) != SUCCESS:
-            return 'error:' + INVALID_ERR 
+            return make_response('error:' + INVALID_ERR, 401) 
 
         validity = _validate_token(token)
         if validity != SUCCESS:
-            return 'error:' + validity
+            return make_response('error:' + validity, 401)
 
         #process
         top_n = request.args.get('top', type=int)
@@ -176,11 +176,11 @@ class ListCloseOnly(Resource):
 
         brevets = _rm_from_brevets_controls(brevets, 'open')
         if fmt == 'json':
-            return brevets
+            return make_response(flask.jsonify(brevets), 200)
         elif fmt == 'csv':
-            return _db_data_to_csv(brevets)
+            return make_response(_db_data_to_csv(brevets), 200)
         else:
-            return 'INVALID FORMAT DIRECTIVE'
+            return make_response('INVALID FORMAT DIRECTIVE', 401)
 
 class Register(Resource):
     def get(self):
@@ -225,14 +225,14 @@ class Token(Resource):
 
         if username == None or passwd == None:
             resp = flask.jsonify({'error': 'Not enough parameters'})
-            resp.status_code = 400
+            resp.status_code = 401
             return resp
 
         #fetch database entry
         user_info = auth_db.users.find_one({'username':username})
         if user_info == None:
             resp = flask.jsonify({'error': 'Invalid username'})
-            resp.status_code = 400
+            resp.status_code = 401
             return resp
 
         #validate password
@@ -242,7 +242,7 @@ class Token(Resource):
         app.logger.debug("HPASS: " + h_pass + " RPASS: " + user_info['password'])
         if h_pass != user_info['password']:
             resp = flask.jsonify({'error': 'Bad password'})
-            resp.status_code = 400
+            resp.status_code = 401
             return resp
 
         #return token

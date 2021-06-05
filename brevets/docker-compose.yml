@@ -31,7 +31,6 @@ services:
         environment:
             BACKEND_ADDR: api 
             BACKEND_PORT: 5000 
-            MONGODB_HOSTNAME: brevetdb
 
     brevetdb:
         image: mongo:latest
