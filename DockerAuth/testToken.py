@@ -11,6 +11,7 @@ def generate_auth_token(expiration=600):
    # s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
    s = Serializer('test1234@#$', expires_in=expiration)
    # pass index of user
+   print(s.dumps({'id':1}))
    return s.dumps({'id': 1})
 
 def verify_auth_token(token):
@@ -26,5 +27,5 @@ def verify_auth_token(token):
 if __name__ == "__main__":
     t = generate_auth_token(10)
     for i in range(1, 20):
-	print verify_auth_token(t)
+        print(verify_auth_token(t))
         time.sleep(1)

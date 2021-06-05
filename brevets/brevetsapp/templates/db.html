@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+   <head>
+      <title>ACP Controle Times</title>
+    </head>
+    <body>
+      <div>
+        {% for brevet in brevets %}
+        <h5>Brevet of {{ brevet.brevet_dist }}</h5>
+          {% for control in brevet.controls %}
+            <p>km: {{ control.km }} | open time: {{ control.open }} | close time: {{ control.close }}</p>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </body>
+  </html>

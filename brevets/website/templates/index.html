@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>Brevets API Consumer</title>
+		<meta charset="utf-8">
+	      	<!-- 'viewport' is used by bootstrap to respond to device size -->
+	      	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	      	<!-- Bootstrap includes javascript and css  (must follow jquery) -->
+	      	<link
+		 rel="stylesheet"
+		 href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css"
+		 integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l"
+		 crossorigin="anonymous">
+	      	<!-- Javascript:  JQuery from a content distribution network (CDN) -->
+	      	<script
+		 src="https://code.jquery.com/jquery-3.5.1.min.js"
+		 integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="
+		 crossorigin="anonymous"></script>
+	      	<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+		 integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN"
+		 crossorigin="anonymous"></script>
+	      	<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js"
+		 integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF"
+		 crossorigin="anonymous"></script>
+	</head>
+	<body>
+		{% if current_user.is_authenticated %}
+			<h3>Logged in: {{ current_user.username }}</h3><br>
+			<a href="/logout">Logout</a><br>
+
+			<button id="load">Load Latest Brevets</button>
+			<h3>List all brevets returning only the top 3 controls(JSON)</h3>
+			<pre id="all"></pre>
+
+			<h3>List open times for all brevets returning only the top 3 controls(CSV)</h3>
+			<h4>Format: brevet dist, km, open time, km, open time, ...</h4>
+			<pre id="open"></pre>
+
+			<h3>List closed times for all brevets returning only the top 3 controls(CSV)</h3>
+			<h4>Format: brevet dist, km, close time, km, close time, ...</h4>
+			<pre id="close"></pre>
+
+			<script type="text/javascript">
+				var API_DATA_URL = "/_get_api_data"
+				$(document).ready(function(){
+					$('#load').click(function(event) {
+						event.preventDefault()
+						$.get(API_DATA_URL, {}).done(function(data) {
+							//Get data from server and display it
+							$('#all').text(data.all)
+							$('#open').text(data.open)
+							$('#close').text(data.close)
+						});
+					});
+				});
+			</script>
+		{% else %}
+			<a href="/login">Login</a><br>
+			<a href="/register">Register</a><br>
+		{% endif %}
+	</body>
+</html>
